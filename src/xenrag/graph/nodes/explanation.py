@@ -4,11 +4,10 @@ Maps claims to evidence, provides confidence scores, and notes limitations.
 """
 
 from typing import Dict, Any
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from xenrag.graph.state import GraphState, Explanation, ReasoningRecord
-from xenrag.config import settings
 from xenrag.utils.json_parser import parse_json_safe
+from xenrag.llm.langchain_wrapper import get_managed_llm
 
 
 async def explanation_node(state: GraphState) -> Dict[str, Any]:
@@ -44,12 +43,8 @@ async def explanation_node(state: GraphState) -> Dict[str, Any]:
             content_preview = item.content[:100] + "..." if len(item.content) > 100 else item.content
             sources_summary.append(f"{source_id}: {content_preview}")
     
-    # Initialize LLM
-    llm = ChatOllama(
-        base_url=settings.OLLAMA_URL,
-        model=settings.LLM_MODEL,
-        temperature=0
-    )
+    # Use managed LLM with failover
+    llm = get_managed_llm(temperature=0)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are an explainability analyst. Analyze the AI-generated answer and explain how it relates to the source documents.

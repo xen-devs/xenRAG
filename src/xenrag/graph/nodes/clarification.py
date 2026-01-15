@@ -4,10 +4,9 @@ Explains why clarification is needed and what information is missing.
 """
 
 from typing import Dict, Any
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from xenrag.graph.state import GraphState, ReasoningRecord
-from xenrag.config import settings
+from xenrag.llm.langchain_wrapper import get_managed_llm
 
 
 async def clarification_node(state: GraphState) -> Dict[str, Any]:
@@ -37,12 +36,8 @@ async def clarification_node(state: GraphState) -> Dict[str, Any]:
     num_docs = len(context.merged_results) if context and context.merged_results else 0
     num_docs = len(context.merged_results) if context and context.merged_results else 0
     
-    # Initialize LLM
-    llm = ChatOllama(
-        base_url=settings.OLLAMA_URL,
-        model=settings.LLM_MODEL,
-        temperature=0.5
-    )
+    # Use managed LLM with failover
+    llm = get_managed_llm(temperature=0.5)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You need to ask the user for clarification because there isn't enough information to answer their question.

@@ -5,11 +5,10 @@ This node does NOT generate text - it only decides if we have enough evidence to
 
 from typing import Dict, Any
 from pydantic import BaseModel, Field
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from xenrag.graph.state import GraphState, ReasoningRecord
-from xenrag.config import settings
+from xenrag.llm.langchain_wrapper import get_managed_llm
 
 
 class SufficiencyOutput(BaseModel):
@@ -52,12 +51,8 @@ async def reasoning_node(state: GraphState) -> Dict[str, Any]:
         for i, item in enumerate(context.merged_results)
     ])
     
-    # Initialize LLM
-    llm = ChatOllama(
-        base_url=settings.OLLAMA_URL,
-        model=settings.LLM_MODEL,
-        temperature=0
-    )
+    # Use managed LLM with failover
+    llm = get_managed_llm(temperature=0)
     
     parser = JsonOutputParser(pydantic_object=SufficiencyOutput)
     

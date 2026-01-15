@@ -4,10 +4,9 @@ Adjusts tone based on detected user emotion.
 """
 
 from typing import Dict, Any
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from xenrag.graph.state import GraphState, ReasoningRecord
-from xenrag.config import settings
+from xenrag.llm.langchain_wrapper import get_managed_llm
 
 
 async def generate_answer_node(state: GraphState) -> Dict[str, Any]:
@@ -42,12 +41,8 @@ async def generate_answer_node(state: GraphState) -> Dict[str, Any]:
             tone_name = "clear"
             tone_instruction = "Use a clear, simple, and helpful tone. Avoid jargon."
     
-    # Initialize LLM
-    llm = ChatOllama(
-        base_url=settings.OLLAMA_URL,
-        model=settings.LLM_MODEL,
-        temperature=0.7
-    )
+    # Use managed LLM with failover
+    llm = get_managed_llm(temperature=0.7)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a helpful customer support assistant analyzing customer reviews.

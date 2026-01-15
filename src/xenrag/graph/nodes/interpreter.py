@@ -4,11 +4,11 @@ Interpreter Node: Classifies user intent and emotion.
 
 from typing import Dict, Any
 from pydantic import BaseModel, Field
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from xenrag.graph.state import GraphState, Intent, Emotion
-from xenrag.config.settings import OLLAMA_URL, LLM_MODEL
+from xenrag.llm.langchain_wrapper import get_managed_llm
+
 
 class InterpretationOutput(BaseModel):
     intent_type: str = Field(..., description="Classification of user intent: ['complaint_analysis', 'specific_question', 'summary_request', 'feature_request', 'unknown']")
@@ -23,12 +23,8 @@ async def interpreter_node(state: GraphState) -> Dict[str, Any]:
     print("--- INTERPRETER NODE ---")
     query = state.input_query
     
-    # Initialize Ollama Chat Model
-    llm = ChatOllama(
-        base_url=OLLAMA_URL,
-        model=LLM_MODEL,
-        temperature=0,
-    )
+    # Use managed LLM with failover
+    llm = get_managed_llm(temperature=0)
     
     parser = JsonOutputParser(pydantic_object=InterpretationOutput)
     
