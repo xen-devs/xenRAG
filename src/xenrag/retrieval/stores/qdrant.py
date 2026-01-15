@@ -124,7 +124,7 @@ class QdrantVectorStore(VectorStore):
                     del payload["embedding"]
                 
                 points.append(models.PointStruct(
-                    id=str(uuid.uuid4()),
+                    id=doc.get("id", str(uuid.uuid4())),
                     vector=embeddings[i],
                     payload=payload
                 ))

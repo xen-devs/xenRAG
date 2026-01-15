@@ -2,25 +2,34 @@ import asyncio
 import json
 import logging
 import sys
+import argparse
 
 from xenrag.retrieval.stores.qdrant import QdrantVectorStore
 from xenrag.retrieval.stores.neo4j import Neo4jGraphStore
+from xenrag.ingestion.pipeline import (
+    process_batch,
+    process_for_vector_store,
+    process_for_graph_store
+)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger("ingest")
 
-async def ingest_file(file_path: str, limit: int = None):
+async def ingest_file(file_path: str, limit: int = None, batch_size: int = 50):
     """
-    Ingest data from JSON or JSONL file in batches.
+    Ingest data from JSON or JSONL file using the enhanced pipeline.
     """
     logger.info(f"Reading file: {file_path}")
     
     vector_store = QdrantVectorStore()
     graph_store = Neo4jGraphStore()
     
-    BATCH_SIZE = 50
     batch = []
-    total_processed = 0
+    total_documents = 0
+    total_segments = 0
     
     try:
         # Determine file type and generator
@@ -46,32 +55,24 @@ async def ingest_file(file_path: str, limit: int = None):
 
         # 2. Process Loop
         for item in item_generator():
-            # Heuristic for text
-            text_content = item.get("text") or item.get("content") or item.get("review") or item.get("body")
+            batch.append(item)
             
-            if not text_content:
-                text_content = json.dumps(item)
-            
-            # Prepare item
-            processed_item = item.copy()
-            processed_item["text"] = text_content
-            
-            # Add to batch
-            batch.append(processed_item)
-            
-            # Flush batch if full
-            if len(batch) >= BATCH_SIZE:
-                await process_batch(vector_store, graph_store, batch)
-                total_processed += len(batch)
-                logger.info(f"Processed {total_processed} items...")
+            if len(batch) >= batch_size:
+                segments = await process_and_store(vector_store, graph_store, batch)
+                total_documents += len(batch)
+                total_segments += segments
+                logger.info(f"Processed {total_documents} docs -> {total_segments} segments")
                 batch = []
 
-        # Flush remaining
         if batch:
-            await process_batch(vector_store, graph_store, batch)
-            total_processed += len(batch)
+            segments = await process_and_store(vector_store, graph_store, batch)
+            total_documents += len(batch)
+            total_segments += segments
             
-        logger.info(f"Ingestion Complete! Total documents: {total_processed}")
+        logger.info(f"Ingestion Complete!")
+        logger.info(f"  Documents: {total_documents}")
+        logger.info(f"  Segments: {total_segments}")
+        logger.info(f"  Avg segments/doc: {total_segments/max(total_documents,1):.1f}")
 
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
@@ -79,21 +80,35 @@ async def ingest_file(file_path: str, limit: int = None):
         traceback.print_exc()
         sys.exit(1)
     finally:
-        if 'graph_store' in locals():
-            graph_store.close()
+        graph_store.close()
 
-async def process_batch(vector_store, graph_store, batch):
-    """Result of processing a single batch."""
-    # Qdrant
-    vector_store.add_documents(batch)
-    # Neo4j
-    graph_store.add_documents(batch, label="Review")
+
+async def process_and_store(vector_store, graph_store, batch) -> int:
+    """Process batch through pipeline and store in both stores."""
+    
+    # Run through pipeline
+    segments = process_batch(batch)
+    
+    # Prepare for each store
+    vector_docs = process_for_vector_store(segments)
+    graph_docs = process_for_graph_store(segments)
+    
+    # Store in Qdrant
+    if vector_docs:
+        vector_store.add_documents(vector_docs)
+    
+    # Store in Neo4j
+    if graph_docs:
+        graph_store.add_documents(graph_docs, label="ReviewSegment")
+    
+    return len(segments)
+
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Ingest data into XenRAG")
+    parser = argparse.ArgumentParser(description="Ingest data into XenRAG with enhanced pipeline")
     parser.add_argument("file", help="Path to JSON or JSONL file")
-    parser.add_argument("--limit", type=int, help="Limit number of documents to ingest", default=None)
+    parser.add_argument("--limit", type=int, help="Limit number of documents", default=None)
+    parser.add_argument("--batch-size", type=int, help="Batch size", default=50)
     
     args = parser.parse_args()
-    asyncio.run(ingest_file(args.file, args.limit))
+    asyncio.run(ingest_file(args.file, args.limit, args.batch_size))
