@@ -10,6 +10,14 @@ from xenrag.graph.nodes.reasoning import reasoning_node
 from xenrag.graph.nodes.generate_answer import generate_answer_node
 from xenrag.graph.nodes.clarification import clarification_node
 from xenrag.graph.nodes.explanation import explanation_node
+from xenrag.graph.nodes.guardrails import input_guardrail_node, output_guardrail_node
+
+
+def should_continue_after_input_guard(state: GraphState) -> str:
+    """Route based on input guardrail result."""
+    if state.is_blocked:
+        return "blocked"
+    return "continue"
 
 
 def should_generate_or_clarify(state: GraphState) -> str:
@@ -37,15 +45,27 @@ def build_graph() -> StateGraph:
     workflow = StateGraph(GraphState)
 
     # Add nodes
+    workflow.add_node("input_guardrail", input_guardrail_node)
     workflow.add_node("interpreter", interpreter_node)
     workflow.add_node("query", query_node)
     workflow.add_node("reasoner", reasoning_node)
     workflow.add_node("generate_answer", generate_answer_node)
+    workflow.add_node("output_guardrail", output_guardrail_node)
     workflow.add_node("ask_clarification", clarification_node)
     workflow.add_node("build_explanation", explanation_node)
 
     # Add edges
-    workflow.add_edge(START, "interpreter")
+    workflow.add_edge(START, "input_guardrail")
+    
+    workflow.add_conditional_edges(
+        "input_guardrail",
+        should_continue_after_input_guard,
+        {
+            "blocked": END,
+            "continue": "interpreter"
+        }
+    )
+    
     workflow.add_edge("interpreter", "query")
     workflow.add_edge("query", "reasoner")
     
@@ -58,7 +78,8 @@ def build_graph() -> StateGraph:
         }
     )
     
-    workflow.add_edge("generate_answer", "build_explanation")
+    workflow.add_edge("generate_answer", "output_guardrail")
+    workflow.add_edge("output_guardrail", "build_explanation")
     workflow.add_edge("build_explanation", END)
     
     workflow.add_edge("ask_clarification", END)

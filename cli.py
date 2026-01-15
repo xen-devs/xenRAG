@@ -54,6 +54,16 @@ def print_result(result: dict):
         
         console.print(info_table)
     
+    # Check if blocked by guardrails
+    if result.get("is_blocked"):
+        console.print()
+        console.print(Panel(
+            f"[red]{result.get('blocked_reason', 'Request blocked by safety filters.')}[/red]",
+            title="[bold red]Blocked[/bold red]",
+            border_style="red"
+        ))
+        return
+    
     # Check if clarification is needed
     if result.get("needs_clarification") and result.get("clarification_message"):
         console.print()

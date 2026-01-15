@@ -77,3 +77,6 @@ class GraphState(BaseModel):
     explanations: List[Explanation] = Field(default_factory=list, description="Explainable metadata.")
     
     private_reasoning: List[ReasoningRecord] = Field(default_factory=list, description="Internal reasoning trace.")
+    is_blocked: bool = Field(False, description="Whether query was blocked by guardrails.")
+    blocked_reason: str = Field("", description="Reason for blocking if applicable.")
+    guardrail_warnings: List[str] = Field(default_factory=list, description="Non-blocking warnings from guardrails.")
