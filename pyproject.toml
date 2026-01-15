@@ -11,6 +11,11 @@ dependencies = [
     "python-dotenv",
     "typing-extensions",
     "langchain-ollama",
+    "qdrant-client",
+    "neo4j",
+    "sentence-transformers",
+    "langchain-huggingface",
+    "rich",
 ]
 
 [build-system]

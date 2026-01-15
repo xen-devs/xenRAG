@@ -71,6 +71,9 @@ class GraphState(BaseModel):
     
     generated_answer: Optional[str] = Field(None, description="Final generated answer.")
     
+    clarification_message: Optional[str] = Field(None, description="Message asking user for clarification.")
+    clarification_reason: Optional[str] = Field(None, description="Why clarification is needed.")
+    
     explanations: List[Explanation] = Field(default_factory=list, description="Explainable metadata.")
     
     private_reasoning: List[ReasoningRecord] = Field(default_factory=list, description="Internal reasoning trace.")

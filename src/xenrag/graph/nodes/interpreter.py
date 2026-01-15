@@ -2,38 +2,25 @@
 Interpreter Node: Classifies user intent and emotion.
 """
 
-from typing import Dict, Any, cast
-from xenrag.graph.state import GraphState, Intent, Emotion, ReasoningRecord
-from xenrag.config.settings import OLLAMA_URL, LLM_MODEL
-from langchain_ollama import ChatOllama
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+from typing import Dict, Any
 from pydantic import BaseModel, Field
-import json
-import re
+from langchain_ollama import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from xenrag.graph.state import GraphState, Intent, Emotion
+from xenrag.config.settings import OLLAMA_URL, LLM_MODEL
 
-def _extract_json(content: str) -> Dict[str, Any]:
-    """
-    Robust JSON extraction from LLM output.
-    Handling Markdown code blocks and raw JSON.
-    """
-    # Find JSON within code blocks first
-    json_match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
-    if not json_match:
-        # Find raw JSON block
-        json_match = re.search(r"\{.*\}", content, re.DOTALL)
-    
-    if json_match:
-        json_str = json_match.group(1) if json_match.lastindex == 1 else json_match.group(0)
-        return json.loads(json_str)
-    
-    raise ValueError(f"No JSON found in output: {content}")
+class InterpretationOutput(BaseModel):
+    intent_type: str = Field(..., description="Classification of user intent: ['complaint_analysis', 'specific_question', 'summary_request', 'feature_request', 'unknown']")
+    intent_confidence: float = Field(..., description="0.0 to 1.0 confidence score for intent")
+    emotion_type: str = Field(..., description="User emotion: ['neutral', 'frustrated', 'happy', 'confused']")
+    emotion_confidence: float = Field(..., description="0.0 to 1.0 confidence score for emotion")
 
 async def interpreter_node(state: GraphState) -> Dict[str, Any]:
     """
-    Analyzes the user's input to determine intent and emotion.
-    Async implementation for high-concurrency production usage.
+    Analyzes the user's input to determine Intent and Emotion.
     """
-    print(f"--- INTERPRETER NODE (Model: {LLM_MODEL}) ---")
+    print("--- INTERPRETER NODE ---")
     query = state.input_query
     
     # Initialize Ollama Chat Model
@@ -43,89 +30,59 @@ async def interpreter_node(state: GraphState) -> Dict[str, Any]:
         temperature=0,
     )
     
-    system_prompt = """
-    You are an expert intent and emotion classifier for a customer review analysis system.
+    parser = JsonOutputParser(pydantic_object=InterpretationOutput)
     
-    Analyze the user's query and classify:
-    1. Intent: What does the user want? (complaint_analysis, why_explanation, summary_request, follow_up, clarification_request, etc.)
-    2. Emotion: What is the user's tone? (neutral, frustrated, confused, satisfied, etc.)
-    3. Confidence: How sure are you? (0.0 to 1.0)
-    
-    Provide brief reasoning for your decision.
-    
-    Return a JSON object with the following structure:
-    {{
-        "intent": {{
-            "type": "intent_type",
-            "confidence": 0.95
-        }},
-        "emotion": {{
-            "type": "emotion_type",
-            "confidence": 0.95
-        }},
-        "reasoning": "reasoning text"
-    }}
-    """
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are an expert intent and emotion classifier for a customer review analysis system.
+        Analyze the user's query and classify it into one of the following intents:
+        - complaint_analysis: User wants to know about problems or bad reviews.
+        - specific_question: User asks about a specific attribute (e.g., "battery life", "price").
+        - summary_request: User wants a general overview.
+        - feature_request: User asks about a missing feature.
+        - unknown: Cannot determine.
 
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=query)
-    ]
+        Also classify the user's emotion as: neutral, frustrated, happy, or confused.
 
+        Return ONLY a JSON object matching the requested format.
+        {format_instructions}
+        """),
+        ("user", "{query}")
+    ])
+    
+    chain = prompt | llm
+    
     try:
-        # Invoke LLM
-        result_msg = await llm.ainvoke(messages)
-        content = result_msg.content
+        response_msg = await chain.ainvoke({"query": query, "format_instructions": parser.get_format_instructions()})
         
-        # Extract JSON
-        result = _extract_json(content)
-        
-
-        intent_data = result.get("intent", {})
-        emotion_data = result.get("emotion", {})
+        result = parser.parse(response_msg.content)
         
         intent = Intent(
-            type=intent_data.get("type", "unknown"),
-            confidence=float(intent_data.get("confidence", 0.0))
+            type=result["intent_type"],
+            confidence=result["intent_confidence"]
         )
         
         emotion = Emotion(
-            type=emotion_data.get("type", "neutral"),
-            confidence=float(emotion_data.get("confidence", 0.0))
+            type=result["emotion_type"],
+            confidence=result["emotion_confidence"]
         )
         
-        reasoning = result.get("reasoning", "No reasoning provided.")
-
-        record = ReasoningRecord(
-            step="interpreter",
-            summary=f"Classified intent as '{intent.type}' and emotion as '{emotion.type}'. Reasoning: {reasoning}",
-            confidence=min(intent.confidence, emotion.confidence)
-        )
+        print(f"Detected: {intent.type} ({intent.confidence:.2f}), {emotion.type} ({emotion.confidence:.2f})")
         
-        state_update = {
-            "intent": intent,
+        return {
+            "intent": intent, 
             "emotion": emotion,
-            "private_reasoning": [record]
+            "private_reasoning": [
+                {
+                    "step": "Interpreter",
+                    "summary": f"Classified as {intent.type} with {emotion.type} emotion.",
+                    "confidence": min(intent.confidence, emotion.confidence)
+                }
+            ]
         }
-        print(f"--- INTERPRETER NODE OUTPUT ---\n{state_update}")
-        return state_update
-
+        
     except Exception as e:
-        print(f"Error in interpreter node: {e}")
-        
-        fallback_intent = Intent(type="unknown", confidence=0.0)
-        fallback_emotion = Emotion(type="neutral", confidence=0.0)
-        
-        record = ReasoningRecord(
-            step="interpreter",
-            summary=f"Failed to classify. Error: {str(e)}",
-            confidence=0.0
-        )
-         
-        state_update = {
-            "intent": fallback_intent,
-            "emotion": fallback_emotion,
-            "private_reasoning": [record]
+        print(f"Interpreter Error: {e}")
+        return {
+            "intent": Intent(type="specific_question", confidence=0.5),
+            "emotion": Emotion(type="neutral", confidence=0.5)
         }
-        print(f"--- INTERPRETER NODE ERROR OUTPUT ---\n{state_update}")
-        return state_update
