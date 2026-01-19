@@ -18,6 +18,8 @@ async def input_guardrail_node(state: GraphState) -> Dict[str, Any]:
     print("--- INPUT GUARDRAIL NODE ---")
     
     query = state.input_query
+    conversation_history = state.conversation_history
+    pending_clarification = state.pending_clarification
     warnings = []
     
     # Validate input safety
@@ -28,6 +30,7 @@ async def input_guardrail_node(state: GraphState) -> Dict[str, Any]:
         return {
             "is_blocked": True,
             "blocked_reason": input_result.blocked_reason,
+            "pending_clarification": False,
             "private_reasoning": [
                 ReasoningRecord(
                     step="InputGuardrail",
@@ -37,14 +40,19 @@ async def input_guardrail_node(state: GraphState) -> Dict[str, Any]:
             ]
         }
     
-    # Check topic relevance
-    topic_result = validate_topic(query)
+    # Check topic relevance with conversation context
+    topic_result = validate_topic(
+        query, 
+        pending_clarification=pending_clarification,
+        conversation_history=conversation_history
+    )
     
     if not topic_result.is_on_topic:
         print(f"Off-topic: {topic_result.off_topic_category}")
         return {
             "is_blocked": True,
             "blocked_reason": topic_result.redirect_message,
+            "pending_clarification": False,
             "private_reasoning": [
                 ReasoningRecord(
                     step="InputGuardrail",

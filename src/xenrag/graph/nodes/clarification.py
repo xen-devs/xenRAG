@@ -78,6 +78,7 @@ Number of related documents found: {num_docs}""")
             "clarification_message": clarification_message,
             "clarification_reason": missing_context,
             "needs_clarification": True,
+            "pending_clarification": True,
             "private_reasoning": [
                 ReasoningRecord(
                     step="AskClarification",
@@ -98,12 +99,13 @@ Number of related documents found: {num_docs}""")
         
         return {
             "clarification_message": fallback_msg,
-            "clarification_reason": "Insufficient context to generate accurate response",
+            "clarification_reason": missing_context,
             "needs_clarification": True,
+            "pending_clarification": True,
             "private_reasoning": [
                 ReasoningRecord(
                     step="AskClarification",
-                    summary=f"Used fallback clarification. Error: {e}",
+                    summary=f"Fallback clarification due to LLM error. Found {num_docs} docs.",
                     confidence=0.5
                 )
             ]

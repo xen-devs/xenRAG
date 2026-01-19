@@ -137,6 +137,10 @@ async def main():
     
     try:
         from xenrag.graph.graph import build_graph
+        from xenrag.graph.state import ConversationMessage
+        from xenrag.config.settings import MAX_CONVERSATION_TURNS
+        from datetime import datetime
+        
         app = build_graph()
         console.print("[green]OK[/green] Graph initialized successfully!\n")
     except Exception as e:
@@ -144,6 +148,10 @@ async def main():
         return
     
     console.print("Type [cyan]help[/cyan] for commands, or start asking questions.\n")
+    
+    # Maintain conversation history across turns
+    conversation_history = []
+    pending_clarification = False
     
     while True:
         try:
@@ -167,6 +175,9 @@ async def main():
         if cmd == "clear":
             console.clear()
             print_header()
+            # Clear conversation history on explicit clear
+            conversation_history = []
+            pending_clarification = False
             continue
         
         if not user_input.strip():
@@ -175,17 +186,59 @@ async def main():
         # Process query
         console.print("[dim]Processing...[/dim]")
         
-        inputs = {"input_query": user_input}
+        # Add user message to history
+        conversation_history.append(ConversationMessage(
+            role="user",
+            content=user_input,
+            timestamp=datetime.now().isoformat()
+        ))
+        
+        # Trim history to MAX_CONVERSATION_TURNS
+        if len(conversation_history) > MAX_CONVERSATION_TURNS * 2:  # *2 for user+assistant pairs
+            conversation_history = conversation_history[-(MAX_CONVERSATION_TURNS * 2):]
+        
+        inputs = {
+            "input_query": user_input,
+            "conversation_history": conversation_history,
+            "pending_clarification": pending_clarification
+        }
         
         try:
             result = await app.ainvoke(inputs)
             print_result(result)
             console.print()
             
+            # Update conversation state based on result
+            if result.get("needs_clarification"):
+                # Add clarification message to history
+                clarification_msg = result.get("clarification_message", "")
+                conversation_history.append(ConversationMessage(
+                    role="clarification",
+                    content=clarification_msg,
+                    timestamp=datetime.now().isoformat()
+                ))
+                pending_clarification = True  # Set flag for next turn
+            elif result.get("generated_answer"):
+                # Add assistant response to history
+                conversation_history.append(ConversationMessage(
+                    role="assistant",
+                    content=result["generated_answer"],
+                    timestamp=datetime.now().isoformat()
+                ))
+                pending_clarification = False  # Clear flag after successful response
+            elif result.get("is_blocked"):
+                # Don't set pending clarification if blocked
+                pending_clarification = False
+            else:
+                # Clear flag for other cases
+                pending_clarification = False
+            
         except Exception as e:
             console.print(f"[red]Error:[/red] {e}")
             import traceback
             traceback.print_exc()
+            # Clear pending clarification on error
+            pending_clarification = False
 
 
 async def simple_main():

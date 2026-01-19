@@ -29,6 +29,12 @@ docker compose up -d
 uv run python scripts/ingest.py data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl 
 ```
 
+### For limitted ingestion
+```bash
+uv run python scripts/ingest.py data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl --limit 500
+```
+
+
 ## Run
 
 ```bash

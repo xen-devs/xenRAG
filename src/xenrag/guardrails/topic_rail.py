@@ -22,6 +22,16 @@ ON_TOPIC_KEYWORDS = [
     "terrible", "amazing", "worst", "best", "opinion", "think", "say"
 ]
 
+# Follow-up keywords
+FOLLOW_UP_KEYWORDS = [
+    "yeah", "yes", "yep", "yup", "sure", "ok", "okay",
+    "no", "nope", "nah",
+    "negative", "positive", "lowest", "highest", "most", "least",
+    "bad", "good", "better", "worse", "first", "last",
+    "one", "that", "this", "those", "these",
+    "want", "need", "looking", "mean"
+]
+
 # Off-topic categories and their patterns
 OFF_TOPIC_PATTERNS = {
     "politics": [
@@ -74,14 +84,17 @@ class TopicRailResult:
     topic_confidence: float = 1.0
 
 
-def calculate_topic_score(text: str) -> float:
+def calculate_topic_score(text: str, is_follow_up: bool = False) -> float:
     """Calculate how on-topic a query is based on keyword matching."""
     text_lower = text.lower()
     
     keyword_matches = sum(1 for kw in ON_TOPIC_KEYWORDS if kw in text_lower)
     
-    # Normalize score (0-1)
-    max_expected = 5  # Typical query might have 5 keywords
+    if is_follow_up:
+        follow_up_matches = sum(1 for kw in FOLLOW_UP_KEYWORDS if kw in text_lower)
+        keyword_matches += follow_up_matches * 0.5
+    
+    max_expected = 5
     score = min(1.0, keyword_matches / max_expected)
     
     return score
@@ -117,10 +130,19 @@ def is_greeting_or_meta(text: str) -> bool:
     return False
 
 
-def validate_topic(query: str) -> TopicRailResult:
+def validate_topic(
+    query: str, 
+    pending_clarification: bool = False,
+    conversation_history: List = None
+) -> TopicRailResult:
     """
     Main topic validation function.
     Determines if the query is on-topic for customer review analysis.
+    
+    Args:
+        query: The user's query
+        pending_clarification: Whether system is awaiting clarification response
+        conversation_history: Recent conversation turns for context
     """
     if not query or not query.strip():
         return TopicRailResult(
@@ -131,6 +153,43 @@ def validate_topic(query: str) -> TopicRailResult:
     # Allow greetings and meta questions
     if is_greeting_or_meta(query):
         return TopicRailResult(is_on_topic=True, topic_confidence=1.0)
+    
+    # If responding to clarification, use relaxed validation
+    if pending_clarification:
+        logger.info("Processing clarification follow-up with relaxed validation")
+        
+        # Check if it relates to the clarification question
+        if conversation_history:
+            last_clarification = None
+            for msg in reversed(conversation_history):
+                role = msg.role if hasattr(msg, 'role') else msg.get('role')
+                if role == 'clarification':
+                    last_clarification = msg.content if hasattr(msg, 'content') else msg.get('content', '')
+                    break
+            
+            if last_clarification:
+                response_indicators = [
+                    r"^(yes|yeah|yep|yup|no|nope|sure|okay|ok)\b",
+                    r"\b(want|need|looking|mean|negative|positive|lowest|highest|worst|best)\b",
+                    r"\b(one|first|last|most|least)\b"
+                ]
+                
+                is_response = any(
+                    re.search(p, query.lower()) for p in response_indicators
+                )
+                
+                if is_response:
+                    return TopicRailResult(
+                        is_on_topic=True,
+                        topic_confidence=0.7
+                    )
+        
+        topic_score = calculate_topic_score(query, is_follow_up=True)
+        if topic_score >= 0.1:
+            return TopicRailResult(
+                is_on_topic=True,
+                topic_confidence=max(0.5, topic_score)
+            )
     
     # Check for explicitly off-topic content
     is_off_topic, category = detect_off_topic(query)
@@ -144,7 +203,7 @@ def validate_topic(query: str) -> TopicRailResult:
         )
     
     # Calculate topic relevance score
-    topic_score = calculate_topic_score(query)
+    topic_score = calculate_topic_score(query, is_follow_up=False)
     
     # Very low score and no obvious on-topic keywords
     if topic_score < 0.2:

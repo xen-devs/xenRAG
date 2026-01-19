@@ -18,6 +18,9 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 # RAG Settings
 RAG_RETRIEVAL_LIMIT = int(os.getenv("RAG_RETRIEVAL_LIMIT", "10"))
 
+# Conversation Settings
+MAX_CONVERSATION_TURNS = int(os.getenv("MAX_CONVERSATION_TURNS", "5"))
+
 # LLM Strategy: failover, round_robin, least_connections, random
 LLM_STRATEGY = os.getenv("LLM_STRATEGY", "round_robin")
 

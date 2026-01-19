@@ -53,6 +53,13 @@ class ReasoningRecord(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in this step.")
 
 
+class ConversationMessage(BaseModel):
+    """A single message in the conversation history."""
+    role: str = Field(..., description="Role: 'user', 'assistant', or 'clarification'")
+    content: str = Field(..., description="Message content")
+    timestamp: Optional[str] = Field(None, description="ISO timestamp of the message")
+
+
 class GraphState(BaseModel):
     """
     Graph State.
@@ -60,6 +67,16 @@ class GraphState(BaseModel):
     input_query: str = Field(..., description="Original user query.")
 
     messages: Annotated[List[BaseMessage], operator.add] = Field(default_factory=list)
+    
+    # Conversation history for context awareness
+    conversation_history: List[ConversationMessage] = Field(
+        default_factory=list, 
+        description="Recent conversation turns for context-aware processing"
+    )
+    pending_clarification: bool = Field(
+        False, 
+        description="Whether system is awaiting clarification response from user"
+    )
     
     intent: Optional[Intent] = Field(None, description="Detected intent.")
     emotion: Optional[Emotion] = Field(None, description="Detected emotion.")
