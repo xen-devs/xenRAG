@@ -1,0 +1,12 @@
+{
+  "name": "@xenrag/backend",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "uv run --no-sync uvicorn api.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "uv run --no-sync python -m compileall api ai_core",
+    "lint": "uv run --no-sync python -m compileall api ai_core",
+    "typecheck": "uv run --no-sync python -m compileall api ai_core",
+    "test": "uv run --no-sync python -m unittest discover -s tests -p \"test_*.py\""
+  }
+}

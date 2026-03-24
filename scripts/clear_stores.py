@@ -3,7 +3,7 @@ Script to clear all data from Qdrant and Neo4j stores.
 """
 
 import logging
-from xenrag.config import settings
+from ai_core.config import settings
 from qdrant_client import QdrantClient
 from neo4j import GraphDatabase
 

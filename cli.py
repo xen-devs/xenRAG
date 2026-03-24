@@ -136,9 +136,9 @@ async def main():
     console.print("[dim]Initializing XenRAG Graph...[/dim]")
     
     try:
-        from xenrag.graph.graph import build_graph
-        from xenrag.graph.state import ConversationMessage
-        from xenrag.config.settings import MAX_CONVERSATION_TURNS
+        from ai_core.graph.graph import build_graph
+        from ai_core.graph.state import ConversationMessage
+        from ai_core.config.settings import MAX_CONVERSATION_TURNS
         from datetime import datetime
         
         app = build_graph()
@@ -250,7 +250,7 @@ async def simple_main():
     print("Initializing XenRAG Graph...")
     
     try:
-        from xenrag.graph.graph import build_graph
+        from ai_core.graph.graph import build_graph
         app = build_graph()
         print("OK - Graph initialized successfully!\n")
     except Exception as e:

@@ -8,6 +8,7 @@ cd xenRAG
 
 # Install dependencies
 uv sync
+npm install
 ```
 
 ### Configure Environment
@@ -26,17 +27,30 @@ docker compose up -d
 ## Ingest Data
 
 ```bash
-uv run python scripts/ingest.py data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl 
+npm run ingest -- data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl
 ```
 
-### For limitted ingestion
+### Limited ingestion
 ```bash
-uv run python scripts/ingest.py data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl --limit 500
+npm run ingest -- data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl --limit 500
 ```
 
 
 ## Run
 
 ```bash
-uv run python cli.py
+npm run ai:cli
+```
+
+### Run with Turborepo
+
+```bash
+npm run dev
+```
+
+```bash
+npm run build
+npm run lint
+npm run typecheck
+npm run test
 ```

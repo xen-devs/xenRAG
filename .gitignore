@@ -4,3 +4,9 @@ __pycache__/
 .venv
 .github/
 .vscode/
+node_modules/
+.turbo/
+.uv-cache/
+dist/
+coverage/
+.uv-cache/

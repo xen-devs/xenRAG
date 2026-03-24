@@ -4,9 +4,9 @@ import logging
 import sys
 import argparse
 
-from xenrag.retrieval.stores.qdrant import QdrantVectorStore
-from xenrag.retrieval.stores.neo4j import Neo4jGraphStore
-from xenrag.ingestion.pipeline import (
+from ai_core.retrieval.stores.qdrant import QdrantVectorStore
+from ai_core.retrieval.stores.neo4j import Neo4jGraphStore
+from ai_core.ingestion.pipeline import (
     process_batch,
     process_for_vector_store,
     process_for_graph_store

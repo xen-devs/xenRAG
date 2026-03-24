@@ -1,0 +1,24 @@
+{
+  "name": "xenrag",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "backend:dev": "npm --workspace @xenrag/backend run dev",
+    "web:dev": "npm --workspace @xenrag/web run dev",
+    "ai:cli": "PYTHONPATH=apps/backend uv run --project apps/backend python cli.py",
+    "ingest": "PYTHONPATH=apps/backend uv run --project apps/backend python scripts/ingest.py",
+    "clear:stores": "PYTHONPATH=apps/backend uv run --project apps/backend python scripts/clear_stores.py"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "packageManager": "npm@10.9.0"
+}
