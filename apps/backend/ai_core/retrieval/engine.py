@@ -9,8 +9,8 @@ class RagEngine:
     The main entry point for the Retrieval Augmentation Generation tool.
     Orchestrates Vector and Graph searches, merges results, and (optionally) reranks.
     """
-    def __init__(self):
-        self.vector_store = QdrantVectorStore()
+    def __init__(self, collection_name: str = None):
+        self.vector_store = QdrantVectorStore(collection_name=collection_name)
         self.graph_store = Neo4jGraphStore()
 
     async def search(self, 

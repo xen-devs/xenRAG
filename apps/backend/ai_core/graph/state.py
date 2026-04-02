@@ -65,6 +65,7 @@ class GraphState(BaseModel):
     Graph State.
     """
     input_query: str = Field(..., description="Original user query.")
+    collection_name: Optional[str] = Field(None, description="Qdrant collection name for org-scoped retrieval.")
 
     messages: Annotated[List[BaseMessage], operator.add] = Field(default_factory=list)
     

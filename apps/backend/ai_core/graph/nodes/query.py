@@ -28,8 +28,7 @@ async def query_node(state: GraphState) -> Dict[str, Any]:
             
     print(f"Selected Strategy: {strategy}")
 
-    engine = RagEngine()
-    
+    engine = RagEngine(collection_name=state.collection_name)
     try:
         query_text = state.input_query
         
