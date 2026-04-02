@@ -137,3 +137,64 @@ class QdrantVectorStore(VectorStore):
         except Exception as e:
             logger.error(f"Qdrant ingestion failed: {e}")
             raise
+
+
+def copy_collection_points(
+    source_collection: str,
+    dest_collection: str,
+    url: Optional[str] = None,
+) -> int:
+    """
+    Copy all points from an existing Qdrant collection into another.
+    The destination collection must already exist with a compatible vector size.
+    Returns the number of points copied.
+    """
+    client = QdrantClient(url=url or settings.QDRANT_URL)
+    collections = client.get_collections().collections
+    if not any(c.name == source_collection for c in collections):
+        logger.warning(f"Source collection '{source_collection}' does not exist; nothing to copy.")
+        return 0
+    if not any(c.name == dest_collection for c in collections):
+        logger.warning(f"Destination collection '{dest_collection}' does not exist; cannot copy.")
+        return 0
+
+    total = 0
+    offset = None
+    while True:
+        records, next_offset = client.scroll(
+            collection_name=source_collection,
+            limit=200,
+            offset=offset,
+            with_payload=True,
+            with_vectors=True,
+        )
+        if not records:
+            break
+
+        points: List[models.PointStruct] = []
+        for r in records:
+            vec = r.vector
+            if isinstance(vec, dict):
+                # Named vectors — use the default/first
+                vec = next(iter(vec.values())) if vec else None
+            if vec is None:
+                logger.warning(f"Skipping point {r.id} with no vector during copy")
+                continue
+            points.append(
+                models.PointStruct(
+                    id=r.id,
+                    vector=vec,
+                    payload=r.payload or {},
+                )
+            )
+
+        if points:
+            client.upsert(collection_name=dest_collection, points=points)
+            total += len(points)
+
+        offset = next_offset
+        if offset is None:
+            break
+
+    logger.info(f"Copied {total} points from '{source_collection}' to '{dest_collection}'.")
+    return total

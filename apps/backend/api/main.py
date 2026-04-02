@@ -7,7 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth.router import auth_router, orgs_router
 from api.core.config import CORS_ORIGINS
-from api.db.models import User, Organization, UserOrganization  # noqa: F401 — ensure models are registered
+from api.db.models import (  # noqa: F401 — ensure models are registered
+    User,
+    Organization,
+    UserOrganization,
+    KnowledgeBaseDataset,
+    KnowledgeBaseUpload
+)
+from api.knowledge_base.router import kb_router
 from api.schemas import ChatRequest, ChatResponse
 from ai_core.graph.graph import build_graph
 from ai_core.graph.state import ConversationMessage
@@ -91,4 +98,5 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
 router.include_router(auth_router)
 router.include_router(orgs_router)
+router.include_router(kb_router)
 app.include_router(router)

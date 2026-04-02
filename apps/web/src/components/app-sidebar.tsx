@@ -1,7 +1,5 @@
 import { type FormEvent, useState } from "react"
 import {
-  BookOpen,
-  Bot,
   BrainCircuit,
   Check,
   ChevronsUpDown,
@@ -12,7 +10,6 @@ import {
   Moon,
   Plus,
   Settings2,
-  SquareTerminal,
   Sun,
   Building2,
 } from "lucide-react"
@@ -56,29 +53,6 @@ import { useAuth } from "@/contexts/auth-context"
 import { useTheme } from "@/components/theme-provider"
 import { createOrg } from "@/lib/auth-api"
 
-const navMain = [
-  {
-    title: "Playground",
-    url: "#",
-    icon: SquareTerminal,
-  },
-  {
-    title: "Models",
-    url: "#",
-    icon: Bot,
-  },
-  {
-    title: "Documentation",
-    url: "#",
-    icon: BookOpen,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings2,
-  },
-]
-
 function getInitials(name?: string) {
   if (!name) return "U"
   return name
@@ -94,6 +68,8 @@ export function AppSidebar() {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
   const { orgId } = useParams()
+
+  const settingsUrl = orgId ? `/org/${orgId}/settings` : "#"
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false)
   const [newOrgName, setNewOrgName] = useState("")
   const [createOrgLoading, setCreateOrgLoading] = useState(false)
@@ -253,16 +229,20 @@ export function AppSidebar() {
           <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navMain.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Settings"
+                  className={
+                    settingsUrl !== "#" ? "cursor-pointer" : "cursor-default"
+                  }
+                  onClick={() => {
+                    if (settingsUrl !== "#") navigate(settingsUrl)
+                  }}
+                >
+                  <Settings2 />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
