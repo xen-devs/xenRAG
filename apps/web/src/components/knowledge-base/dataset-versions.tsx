@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { CheckCircle2, Loader2, Trash2 } from "lucide-react"
 import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import {
   type Dataset,
   activateDataset,
@@ -19,6 +20,8 @@ export function DatasetVersions({ refreshTrigger }: DatasetVersionsProps) {
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Dataset | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!orgId) return
@@ -51,19 +54,19 @@ export function DatasetVersions({ refreshTrigger }: DatasetVersionsProps) {
     }
   }
 
-  const handleDelete = async (datasetId: string) => {
-    if (!orgId) return
-    if (!confirm("Delete this dataset version? The Qdrant collection will also be removed.")) return
+  const handleDelete = async () => {
+    if (!orgId || !deleteTarget) return
 
-    setActionLoading(datasetId)
+    setDeleteLoading(true)
     try {
-      await deleteDataset(orgId, datasetId)
+      await deleteDataset(orgId, deleteTarget.id)
       toast.success("Dataset deleted")
       await load()
+      setDeleteTarget(null)
     } catch {
       toast.error("Failed to delete dataset")
     } finally {
-      setActionLoading(null)
+      setDeleteLoading(false)
     }
   }
 
@@ -162,7 +165,7 @@ export function DatasetVersions({ refreshTrigger }: DatasetVersionsProps) {
                       size="sm"
                       className="text-destructive hover:bg-destructive/10 h-7"
                       disabled={actionLoading === ds.id}
-                      onClick={() => handleDelete(ds.id)}
+                      onClick={() => setDeleteTarget(ds)}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -173,6 +176,17 @@ export function DatasetVersions({ refreshTrigger }: DatasetVersionsProps) {
           ))}
         </tbody>
       </table>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title="Delete dataset?"
+        description="This dataset version will be permanently deleted."
+        confirmLabel="Delete"
+        variant="destructive"
+        isLoading={deleteLoading}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

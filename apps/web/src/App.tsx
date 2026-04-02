@@ -9,12 +9,18 @@ import { SettingsLayout } from "@/pages/settings/settings-layout"
 import { MyAccountPage } from "@/pages/settings/my-account-page"
 import { KnowledgeBasePage } from "@/pages/settings/knowledge-base-page"
 
+function getRouteKey(pathname: string) {
+  const chatMatch = pathname.match(/^\/org\/[^/]+\/chat/)
+  if (chatMatch) return chatMatch[0]
+  return pathname
+}
+
 export default function App() {
   const location = useLocation()
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location} key={getRouteKey(location.pathname)}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route

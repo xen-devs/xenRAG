@@ -1,19 +1,22 @@
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useRef, useState } from "react"
 import {
   BrainCircuit,
   Check,
   ChevronsUpDown,
   ChevronUp,
+  MoreHorizontal,
   Loader2,
   LogOut,
+  MessageSquarePlus,
   Monitor,
   Moon,
   Plus,
   Settings2,
   Sun,
   Building2,
+  Search,
 } from "lucide-react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
 import toast from "react-hot-toast"
 
 import {
@@ -28,6 +31,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useSidebar } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,9 +53,13 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Kbd } from "@/components/ui/kbd"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
+import { CommandPalette } from "@/components/command-palette"
 import { useAuth } from "@/contexts/auth-context"
 import { useTheme } from "@/components/theme-provider"
 import { createOrg } from "@/lib/auth-api"
+import { deleteChat, listChats, renameChat, type ChatSummary } from "@/lib/chat-api"
 
 function getInitials(name?: string) {
   if (!name) return "U"
@@ -67,15 +75,58 @@ export function AppSidebar() {
   const { user, logout, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const { orgId } = useParams()
 
   const settingsUrl = orgId ? `/org/${orgId}/settings` : "#"
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false)
   const [newOrgName, setNewOrgName] = useState("")
   const [createOrgLoading, setCreateOrgLoading] = useState(false)
+  const [chats, setChats] = useState<ChatSummary[]>([])
+  const [editingChatId, setEditingChatId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState("")
+  const editingInputRef = useRef<HTMLInputElement>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ChatSummary | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const { state: sidebarState } = useSidebar()
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
 
   const currentOrg = user?.orgs.find((o) => o.id === orgId)
   const orgName = currentOrg?.name ?? "Organization"
+
+  const activeChatId = location.pathname.match(
+    /\/org\/[^/]+\/chat\/([^/]+)/,
+  )?.[1]
+
+  useEffect(() => {
+    if (!orgId) return
+    listChats(orgId)
+      .then(setChats)
+      .catch(() => {})
+  }, [orgId, location.pathname])
+
+  useEffect(() => {
+    if (editingChatId && editingInputRef.current) {
+      setTimeout(() => editingInputRef.current?.select(), 50)
+    }
+  }, [editingChatId])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "/" && !e.ctrlKey && !e.metaKey) {
+        const target = e.target as HTMLElement
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return
+        e.preventDefault()
+        setIsCommandPaletteOpen(true)
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setIsCommandPaletteOpen(true)
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   function handleLogout() {
     logout()
@@ -226,9 +277,20 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="New Chat"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    if (orgId) navigate(`/org/${orgId}/chat`)
+                  }}
+                >
+                  <MessageSquarePlus />
+                  <span>New Chat</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="Settings"
@@ -243,9 +305,113 @@ export function AppSidebar() {
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Search chats"
+                  className="cursor-pointer"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                >
+                  <Search />
+                  <span>Search</span>
+                  <Kbd className="ml-auto text-xs font-sans">⌘K</Kbd>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {chats.length > 0 && sidebarState === "expanded" && (
+          <SidebarGroup className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <SidebarGroupLabel>Chats</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {chats.map((chat) => (
+                  <SidebarMenuItem key={chat.id}>
+                    <div className="group/chat relative flex w-full items-center">
+                      {editingChatId === chat.id ? (
+                        <input
+                          ref={editingInputRef}
+                          className="truncate flex-1 bg-transparent border border-ring rounded px-2 py-1 text-sm outline-none"
+                          value={editingTitle}
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onBlur={async () => {
+                            const trimmed = editingTitle.trim()
+                            if (trimmed && trimmed !== (chat.title || "")) {
+                              try {
+                                const updated = await renameChat(orgId!, chat.id, trimmed)
+                                setChats((prev) =>
+                                  prev.map((c) => c.id === chat.id ? updated : c)
+                                )
+                                toast.success("Chat renamed")
+                              } catch {
+                                toast.error("Failed to rename chat")
+                              }
+                            }
+                            setEditingChatId(null)
+                          }}
+                          onKeyDown={async (e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              editingInputRef.current?.blur()
+                            } else if (e.key === "Escape") {
+                              setEditingChatId(null)
+                            }
+                          }}
+                        />
+                      ) : (
+                        <SidebarMenuButton
+                          tooltip={chat.title || "Untitled"}
+                          isActive={activeChatId === chat.id}
+                          className="cursor-pointer w-full pr-8"
+                          onClick={() =>
+                            navigate(`/org/${orgId}/chat/${chat.id}`)
+                          }
+                        >
+                          <span className="truncate block">
+                            {chat.title || "Untitled"}
+                          </span>
+                        </SidebarMenuButton>
+                      )}
+
+                      {editingChatId !== chat.id && sidebarState === "expanded" && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="absolute right-1.5 opacity-0 group-hover/chat:opacity-100 p-1 rounded hover:bg-accent"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" side="right" sideOffset={4}>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => {
+                                setEditingTitle(chat.title || "")
+                                setEditingChatId(chat.id)
+                              }}
+                            >
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-red-500"
+                              onClick={() => setDeleteTarget(chat)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       {/* User Footer with Theme & Logout */}
@@ -351,6 +517,38 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <ConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title="Delete chat?"
+        description={`"${deleteTarget?.title || "Untitled"}" will be permanently deleted.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        isLoading={deleteLoading}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          setDeleteLoading(true)
+          try {
+            await deleteChat(orgId!, deleteTarget.id)
+            setChats((prev) => prev.filter((c) => c.id !== deleteTarget.id))
+            if (activeChatId === deleteTarget.id) {
+              navigate(`/org/${orgId}/chat`)
+            }
+            setDeleteTarget(null)
+            toast.success("Chat deleted")
+          } catch {
+            toast.error("Failed to delete chat")
+          } finally {
+            setDeleteLoading(false)
+          }
+        }}
+      />
+
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        onOpenChange={setIsCommandPaletteOpen}
+        orgId={orgId!}
+      />
     </Sidebar>
   )
 }

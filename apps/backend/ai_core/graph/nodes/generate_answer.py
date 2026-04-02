@@ -59,13 +59,15 @@ Provide a clear, helpful answer. Do NOT wrap your response in JSON or any specia
     chain = prompt | llm
     
     try:
-        response_msg = await chain.ainvoke({
+        answer = ""
+        async for chunk in chain.astream({
             "query": query,
             "context": docs_text,
             "tone_instruction": tone_instruction
-        })
-        
-        answer = response_msg.content.strip()
+        }):
+            answer += chunk.content if hasattr(chunk, "content") else str(chunk)
+
+        answer = answer.strip()
         
         if answer.startswith('```') and answer.endswith('```'):
             answer = answer[3:-3].strip()
