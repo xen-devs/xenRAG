@@ -1,36 +1,44 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { Routes, Route, useLocation } from "react-router-dom"
+import { AnimatePresence } from "framer-motion"
+import { LandingPage } from "@/pages/landing/landing-page"
+import { AuthPage } from "@/pages/auth/auth-page"
+import { OnboardingPage } from "@/pages/onboarding/onboarding-page"
+import { ChatPage } from "@/pages/chat/chat-page"
+import { ProtectedRoute } from "@/components/protected-route"
 
-export function App() {
+export default function App() {
+  const location = useLocation()
+
   return (
-    <TooltipProvider delayDuration={0}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <h1 className="text-sm font-medium">xenRAG Frontend</h1>
-          </header>
-          <main className="flex-1 p-6">
-            <div className="mx-auto flex max-w-3xl flex-col gap-3">
-              <h2 className="text-xl font-semibold">Sidebar is ready</h2>
-              <p className="text-sm text-muted-foreground">
-                Use the trigger in the header to collapse or expand the sidebar.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Press <kbd>Ctrl</kbd> + <kbd>b</kbd> to toggle quickly.
-              </p>
-            </div>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </TooltipProvider>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/org/:orgId/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/org/:orgId/chat/:chatId"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AnimatePresence>
   )
 }
-
-export default App

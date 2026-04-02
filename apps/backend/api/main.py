@@ -1,13 +1,33 @@
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Dict
 
 from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
+from api.auth.router import auth_router, orgs_router
+from api.core.config import CORS_ORIGINS
+from api.db.models import User, Organization, UserOrganization  # noqa: F401 — ensure models are registered
 from api.schemas import ChatRequest, ChatResponse
 from ai_core.graph.graph import build_graph
 from ai_core.graph.state import ConversationMessage
 
-app = FastAPI(title="xenRAG API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+
+
+app = FastAPI(title="xenRAG API", version="0.1.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 _graph = build_graph()
 router = APIRouter(prefix="/api/v1")
 
@@ -69,4 +89,6 @@ async def chat(request: ChatRequest) -> ChatResponse:
     )
 
 
+router.include_router(auth_router)
+router.include_router(orgs_router)
 app.include_router(router)

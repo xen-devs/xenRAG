@@ -1,4 +1,26 @@
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: xenrag-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: postgres
+      POSTGRES_DB: xenrag_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - xenrag_db_data:/var/lib/postgresql/data
+    
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
@@ -25,6 +47,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  xenrag_db_data:
   qdrant_data:
   neo4j_data:
   neo4j_logs:
