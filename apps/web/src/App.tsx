@@ -1,10 +1,13 @@
-import { Routes, Route, useLocation } from "react-router-dom"
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { AnimatePresence } from "framer-motion"
 import { LandingPage } from "@/pages/landing/landing-page"
 import { AuthPage } from "@/pages/auth/auth-page"
 import { OnboardingPage } from "@/pages/onboarding/onboarding-page"
 import { ChatPage } from "@/pages/chat/chat-page"
 import { ProtectedRoute } from "@/components/protected-route"
+import { SettingsLayout } from "@/pages/settings/settings-layout"
+import { MyAccountPage } from "@/pages/settings/my-account-page"
+import { KnowledgeBasePage } from "@/pages/settings/knowledge-base-page"
 
 export default function App() {
   const location = useLocation()
@@ -38,6 +41,18 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/org/:orgId/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="my-account" replace />} />
+          <Route path="my-account" element={<MyAccountPage />} />
+          <Route path="knowledge-base" element={<KnowledgeBasePage />} />
+        </Route>
       </Routes>
     </AnimatePresence>
   )
