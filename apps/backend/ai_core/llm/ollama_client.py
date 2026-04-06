@@ -35,8 +35,8 @@ class OllamaClient(BaseLLM):
     async def generate(
         self,
         prompt: str,
-        temperature: float = 0.7,
-        max_tokens: int = 1024,
+        temperature: float = 0.33,
+        max_tokens: Optional[int] = None,
         system_prompt: str = None,
         **kwargs
     ) -> LLMResponse:

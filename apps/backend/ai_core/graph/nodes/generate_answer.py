@@ -19,7 +19,13 @@ async def generate_answer_node(state: GraphState) -> Dict[str, Any]:
     query = state.input_query
     context = state.retrieval_context
     emotion = state.emotion
-    
+    product_context = ""
+    if state.product_name or state.product_description:
+        product_context = "\n\n**Product context:**"
+        if state.product_name:
+            product_context += f"\n- Product: {state.product_name}"
+        if state.product_description:
+            product_context += f"\n- Description: {state.product_description}"
     if context and context.merged_results:
         docs_text = "\n\n".join([
             f"[Source: {item.source}] {item.content}" 
@@ -42,18 +48,37 @@ async def generate_answer_node(state: GraphState) -> Dict[str, Any]:
             tone_instruction = "Use a clear, simple, and helpful tone. Avoid jargon."
     
     # Use managed LLM with failover
-    llm = get_managed_llm(temperature=0.7)
+    llm = get_managed_llm()
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a helpful customer support assistant analyzing customer reviews.
+        ("system", """You are a friendly and knowledgeable assistant that helps product owners and teams understand their customer feedback. The user is NOT an end customer — they are the owner/team behind the product who uploaded customer reviews, feedback, and data to analyze.
 
-Your task is to answer the user's question based ONLY on the provided context.
-Do not use information outside the context. If the context doesn't contain relevant information, say so.
+**How to behave:**
+- Be conversational and natural. Greet users warmly when they greet you.
+- If the user says "hi", "hello", "hey" or similar, respond with a friendly greeting and briefly mention you can help them understand their customer feedback (e.g., "Hey! How can I help you today?").
+- If the user asks what you can do or your capabilities, explain that you can help them:
+  - Analyze customer reviews and feedback
+  - Identify common complaints, praises, and trends
+  - Summarize what customers are saying about specific features
+  - Compare sentiment across different aspects of their product
+  - Surface actionable insights from customer data
+- For questions, use the provided context to give accurate, well-structured answers.
+- If the context has relevant information, use it. If the context is empty or not relevant, say you don't have enough information on that topic and suggest they try rephrasing.
+- NEVER mention internal system details like "knowledge base", "context", "documents retrieved", "vector search", "no context available", etc. to the user. Just answer naturally.
+
+**Formatting rules:**
+- Use markdown formatting for better readability when appropriate (bold, bullet points, numbered lists, tables).
+- Keep tables to a maximum of 4 columns. Keep table cell content short and simple — NO bullet points, NO `<br>` tags, NO HTML inside table cells. If you need to show detailed points, use bullet lists outside the table instead.
+- Be concise but thorough. Don't pad your answer unnecessarily, but don't cut important details either.
+- Never wrap your response in JSON or code fences unless the user asks for code.
+- Never use HTML tags like `<br>`, `<p>`, `<div>` etc. Use only standard markdown.
+- Cite or reference specific parts of the context when relevant (e.g., "According to the reviews..." or "Based on the data...").
 
 {tone_instruction}
 
-Provide a clear, helpful answer. Do NOT wrap your response in JSON or any special format - just provide the answer directly."""),
-        ("user", "Question: {query}\n\nContext from customer reviews:\n{context}")
+**Important:** Be helpful, be human, be clear. Your goal is to make the user feel like they're talking to a smart, helpful colleague - not a rigid robot.
+{product_context}"""),
+        ("user", "Question: {query}\n\nContext from knowledge base:\n{context}")
     ])
     
     chain = prompt | llm
@@ -63,7 +88,8 @@ Provide a clear, helpful answer. Do NOT wrap your response in JSON or any specia
         async for chunk in chain.astream({
             "query": query,
             "context": docs_text,
-            "tone_instruction": tone_instruction
+            "tone_instruction": tone_instruction,
+            "product_context": product_context,
         }):
             answer += chunk.content if hasattr(chunk, "content") else str(chunk)
 
@@ -93,7 +119,7 @@ Provide a clear, helpful answer. Do NOT wrap your response in JSON or any specia
         traceback.print_exc()
         
         try:
-            simple_prompt = f"Based on this context about customer reviews:\n{docs_text[:2000]}\n\nAnswer this question: {query}"
+            simple_prompt = f"Based on this context from the knowledge base:\n{docs_text}\n\nAnswer this question helpfully and conversationally: {query}"
             response = await llm.ainvoke(simple_prompt)
             return {
                 "generated_answer": response.content.strip(),

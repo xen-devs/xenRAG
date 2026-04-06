@@ -27,6 +27,7 @@ from api.chat.schemas import (
     SendMessageRequest,
 )
 from api.chat.service import ChatService
+from api.db.models import Organization
 from ai_core.graph.graph import build_graph
 from ai_core.graph.state import ConversationMessage
 
@@ -137,6 +138,12 @@ async def stream_message(
     # Get org's active KB collection
     collection_name = await svc.get_active_collection(org_id)
 
+    from sqlalchemy import select
+    org_result = await db.execute(select(Organization).where(Organization.id == uuid.UUID(org_id)))
+    org = org_result.scalar_one_or_none()
+    product_name = org.product_name if org else None
+    product_description = org.description if org else None
+
     # Create or fetch chat
     if body.chat_id:
         chat = await svc.get_chat(body.chat_id, org_id)
@@ -199,6 +206,10 @@ async def stream_message(
         }
         if collection_name:
             payload["collection_name"] = collection_name
+        if product_name:
+            payload["product_name"] = product_name
+        if product_description:
+            payload["product_description"] = product_description
 
         streamed_answer = ""
         final_answer = ""
@@ -209,10 +220,12 @@ async def stream_message(
         answer_streaming = False
         answer_done = False
 
+        thread_config = {"configurable": {"thread_id": chat_id_str}, "recursion_limit": 25}
+
         try:
             # Dual stream: "updates" for node events, "messages" for LLM tokens
             async for mode, chunk in _graph.astream(
-                payload, stream_mode=["updates", "messages"]
+                payload, stream_mode=["updates", "messages"], config=thread_config
             ):
                 if mode == "updates":
                     for node_name, state_update in chunk.items():

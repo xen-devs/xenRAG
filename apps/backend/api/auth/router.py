@@ -64,5 +64,5 @@ async def create_org(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    org = await create_organization(db, current_user.id, req.name)
-    return UserOrgOut(id=str(org.id), name=org.name, role="owner")
+    org = await create_organization(db, current_user.id, req.name, req.product_name, req.description)
+    return UserOrgOut(id=str(org.id), name=org.name, role="owner", product_name=org.product_name, description=org.description)

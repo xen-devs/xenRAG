@@ -17,10 +17,12 @@ from api.db.models import (  # noqa: F401 — ensure models are registered
     Message,
 )
 from api.knowledge_base.router import kb_router
+from ai_core.graph.graph import setup_checkpointer
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await setup_checkpointer()
     yield
 
 

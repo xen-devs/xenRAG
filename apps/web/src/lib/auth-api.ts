@@ -21,6 +21,8 @@ export interface UserOrg {
   id: string
   name: string
   role: string
+  product_name?: string
+  description?: string
 }
 
 export interface MeResponse {
@@ -32,6 +34,8 @@ export interface MeResponse {
 
 export interface CreateOrgPayload {
   name: string
+  product_name?: string
+  description?: string
 }
 
 export async function signUp(data: SignUpPayload): Promise<TokenResponse> {

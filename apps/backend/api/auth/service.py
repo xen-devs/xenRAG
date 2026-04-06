@@ -28,8 +28,14 @@ async def create_user_and_org(db: AsyncSession, req: SignUpRequest) -> User:
     return user
 
 
-async def create_organization(db: AsyncSession, user_id: str, name: str) -> Organization:
-    org = Organization(name=name, created_by=user_id)
+async def create_organization(
+    db: AsyncSession,
+    user_id: str,
+    name: str,
+    product_name: str | None = None,
+    description: str | None = None,
+) -> Organization:
+    org = Organization(name=name, product_name=product_name, description=description, created_by=user_id)
     db.add(org)
     await db.flush()
 
@@ -56,7 +62,13 @@ async def get_user_with_orgs(db: AsyncSession, user_id: str) -> MeResponse | Non
         return None
 
     orgs = [
-        UserOrgOut(id=str(m.org_id), name=m.organization.name, role=m.role)
+        UserOrgOut(
+            id=str(m.org_id),
+            name=m.organization.name,
+            role=m.role,
+            product_name=m.organization.product_name,
+            description=m.organization.description,
+        )
         for m in user.memberships
     ]
 

@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+_raw_sync_url = os.getenv("DATABASE_URL_SYNC", "")
+DATABASE_URL_SYNC = _raw_sync_url.replace("postgresql+psycopg2://", "postgresql://") if _raw_sync_url else ""
+
 OLLAMA_URL = os.getenv("OLLAMA_URL")
 LLM_MODEL = os.getenv("LLM_MODEL")
 LLM_EMBEDDING_MODEL = os.getenv("LLM_EMBEDDING_MODEL")

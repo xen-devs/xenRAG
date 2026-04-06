@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 import { cn } from "@/lib/utils"
 
 interface ChatMessageProps {
@@ -44,10 +45,10 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
     <div className={cn("flex", isUser && "flex-row-reverse")}>
       <div
         className={cn(
-          "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
+          "rounded-2xl px-4 py-3 text-sm leading-relaxed",
           isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-muted rounded-tl-sm",
+            ? "max-w-[80%] bg-primary text-primary-foreground rounded-tr-sm"
+            : "w-full max-w-full bg-muted rounded-tl-sm sm:max-w-[80%]",
         )}
       >
         {isUser ? (
@@ -56,14 +57,15 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
           <div className="space-y-2">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
               components={{
-                p: ({ children }) => <p className="my-1.5">{children}</p>,
-                h1: ({ children }) => <h1 className="my-2 text-xl font-semibold">{children}</h1>,
-                h2: ({ children }) => <h2 className="my-2 text-lg font-semibold">{children}</h2>,
-                h3: ({ children }) => <h3 className="my-2 text-base font-semibold">{children}</h3>,
-                ul: ({ children }) => <ul className="my-1.5 list-disc list-inside space-y-0.5">{children}</ul>,
-                ol: ({ children }) => <ol className="my-1.5 list-decimal list-inside space-y-0.5">{children}</ol>,
-                li: ({ children }) => <li className="my-0.5">{children}</li>,
+                p: ({ children }) => <p className="my-2 leading-7 first:mt-0 last:mb-0">{children}</p>,
+                h1: ({ children }) => <h1 className="my-3 text-xl font-semibold leading-tight">{children}</h1>,
+                h2: ({ children }) => <h2 className="my-3 text-lg font-semibold leading-tight">{children}</h2>,
+                h3: ({ children }) => <h3 className="my-2.5 text-base font-semibold leading-tight">{children}</h3>,
+                ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-muted-foreground">{children}</ul>,
+                ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:text-muted-foreground">{children}</ol>,
+                li: ({ children }) => <li className="pl-1 leading-7">{children}</li>,
                 blockquote: ({ children }) => (
                   <blockquote className="my-2 border-l-4 border-muted-foreground/30 pl-4 italic text-muted-foreground">
                     {children}

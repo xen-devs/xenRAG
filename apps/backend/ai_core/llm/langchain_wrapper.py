@@ -17,8 +17,8 @@ class ManagedChatModel(BaseChatModel):
     Supports automatic failover between Ollama and Gemini.
     """
     
-    temperature: float = 0.7
-    max_tokens: int = 1024
+    temperature: float = 0.33
+    max_tokens: Optional[int] = None
     
     @property
     def _llm_type(self) -> str:
@@ -57,12 +57,15 @@ class ManagedChatModel(BaseChatModel):
         # Get manager and generate
         manager = get_llm_manager()
         
-        response = await manager.generate(
-            prompt=user_prompt,
-            system_prompt=system_prompt,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens
-        )
+        generate_kwargs = {
+            "prompt": user_prompt,
+            "system_prompt": system_prompt,
+            "temperature": self.temperature,
+        }
+        if self.max_tokens is not None:
+            generate_kwargs["max_tokens"] = self.max_tokens
+
+        response = await manager.generate(**generate_kwargs)
         
         # Log which LLM was used
         print(f"[LLM: {response.model}] Response in {response.latency_ms:.0f}ms")
@@ -74,6 +77,6 @@ class ManagedChatModel(BaseChatModel):
         return ChatResult(generations=[generation])
 
 
-def get_managed_llm(temperature: float = 0.7, max_tokens: int = 1024) -> ManagedChatModel:
+def get_managed_llm(temperature: float = 0.33, max_tokens: Optional[int] = None) -> ManagedChatModel:
     """Factory function to get a managed LLM instance."""
     return ManagedChatModel(temperature=temperature, max_tokens=max_tokens)

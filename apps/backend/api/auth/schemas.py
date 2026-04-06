@@ -12,6 +12,8 @@ class SignUpRequest(BaseModel):
 
 class CreateOrgRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Organization name")
+    product_name: Optional[str] = Field(None, max_length=255, description="Product name")
+    description: Optional[str] = Field(None, max_length=1000, description="Product/org description for AI context")
 
 
 class SignInRequest(BaseModel):
@@ -28,6 +30,8 @@ class UserOrgOut(BaseModel):
     id: str
     name: str
     role: str
+    product_name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class MeResponse(BaseModel):

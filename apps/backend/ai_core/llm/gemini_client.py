@@ -42,8 +42,8 @@ class GeminiClient(BaseLLM):
     async def generate(
         self,
         prompt: str,
-        temperature: float = 0.7,
-        max_tokens: int = 1024,
+        temperature: float = 0.33,
+        max_tokens: Optional[int] = None,
         system_prompt: str = None,
         **kwargs
     ) -> LLMResponse:
@@ -60,15 +60,16 @@ class GeminiClient(BaseLLM):
             # Use async client
             import asyncio
             loop = asyncio.get_event_loop()
+            gen_config = {"temperature": temperature}
+            if max_tokens is not None:
+                gen_config["max_output_tokens"] = max_tokens
+
             response = await loop.run_in_executor(
                 None,
                 lambda: client.models.generate_content(
                     model=self.model,
                     contents=full_prompt,
-                    config={
-                        "temperature": temperature,
-                        "max_output_tokens": max_tokens,
-                    }
+                    config=gen_config,
                 )
             )
             

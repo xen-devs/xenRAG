@@ -11,6 +11,8 @@ interface CreateOrgFormProps {
 
 export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
   const [name, setName] = useState("")
+  const [productName, setProductName] = useState("")
+  const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
@@ -23,7 +25,11 @@ export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
     setLoading(true)
 
     try {
-      await createOrg({ name: name.trim() })
+      await createOrg({
+        name: name.trim(),
+        product_name: productName.trim() || undefined,
+        description: description.trim() || undefined,
+      })
       toast.success("Organization created successfully!")
       onSuccess()
     } catch (err: unknown) {
@@ -58,6 +64,33 @@ export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="product-name" className="text-sm font-medium">
+          Product Name
+        </label>
+        <Input
+          id="product-name"
+          type="text"
+          placeholder="e.g., Fire TV Stick"
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="description" className="text-sm font-medium">
+          Description
+        </label>
+        <textarea
+          id="description"
+          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          placeholder="Briefly describe your product or what kind of data the AI will be working with..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={1000}
         />
       </div>
 

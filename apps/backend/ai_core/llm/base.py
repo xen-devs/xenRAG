@@ -4,6 +4,7 @@ Abstract LLM interface for XenRAG.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -27,8 +28,8 @@ class BaseLLM(ABC):
     async def generate(
         self,
         prompt: str,
-        temperature: float = 0.7,
-        max_tokens: int = 1024,
+        temperature: float = 0.33,
+        max_tokens: Optional[int] = None,
         **kwargs
     ) -> LLMResponse:
         """Generate text from prompt."""
