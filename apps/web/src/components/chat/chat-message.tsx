@@ -48,7 +48,7 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
           "rounded-2xl px-4 py-3 text-sm leading-relaxed",
           isUser
             ? "max-w-[80%] bg-primary text-primary-foreground rounded-tr-sm"
-            : "w-full max-w-full bg-muted rounded-tl-sm sm:max-w-[80%]",
+            : "max-w-full bg-muted rounded-tl-sm sm:max-w-[80%]",
         )}
       >
         {isUser ? (

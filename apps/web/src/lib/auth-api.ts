@@ -34,8 +34,8 @@ export interface MeResponse {
 
 export interface CreateOrgPayload {
   name: string
-  product_name?: string
-  description?: string
+  product_name: string
+  description: string
 }
 
 export async function signUp(data: SignUpPayload): Promise<TokenResponse> {

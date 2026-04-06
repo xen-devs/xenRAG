@@ -21,14 +21,22 @@ export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
       toast.error("Organization name must be at least 2 characters")
       return
     }
+    if (!productName.trim()) {
+      toast.error("Product name is required")
+      return
+    }
+    if (!description.trim()) {
+      toast.error("Description is required")
+      return
+    }
 
     setLoading(true)
 
     try {
       await createOrg({
         name: name.trim(),
-        product_name: productName.trim() || undefined,
-        description: description.trim() || undefined,
+        product_name: productName.trim(),
+        description: description.trim(),
       })
       toast.success("Organization created successfully!")
       onSuccess()
@@ -75,6 +83,7 @@ export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
           id="product-name"
           type="text"
           placeholder="e.g., Fire TV Stick"
+          required
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
         />
@@ -88,6 +97,7 @@ export function CreateOrgForm({ onSuccess }: CreateOrgFormProps) {
           id="description"
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           placeholder="Briefly describe your product or what kind of data the AI will be working with..."
+          required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={1000}

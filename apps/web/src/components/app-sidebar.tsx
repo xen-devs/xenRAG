@@ -81,6 +81,8 @@ export function AppSidebar() {
   const settingsUrl = orgId ? `/org/${orgId}/settings` : "#"
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false)
   const [newOrgName, setNewOrgName] = useState("")
+  const [newProductName, setNewProductName] = useState("")
+  const [newDescription, setNewDescription] = useState("")
   const [createOrgLoading, setCreateOrgLoading] = useState(false)
   const [chats, setChats] = useState<ChatSummary[]>([])
   const [editingChatId, setEditingChatId] = useState<string | null>(null)
@@ -143,14 +145,28 @@ export function AppSidebar() {
       toast.error("Organization name must be at least 2 characters")
       return
     }
+    if (!newProductName.trim()) {
+      toast.error("Product name is required")
+      return
+    }
+    if (!newDescription.trim()) {
+      toast.error("Description is required")
+      return
+    }
 
     setCreateOrgLoading(true)
 
     try {
-      const org = await createOrg({ name: newOrgName.trim() })
+      const org = await createOrg({
+        name: newOrgName.trim(),
+        product_name: newProductName.trim(),
+        description: newDescription.trim(),
+      })
       await refreshUser()
       setIsCreateOrgOpen(false)
       setNewOrgName("")
+      setNewProductName("")
+      setNewDescription("")
       toast.success("Organization created!")
       navigate(`/org/${org.id}/chat`)
     } catch (err: unknown) {
@@ -240,7 +256,11 @@ export function AppSidebar() {
         open={isCreateOrgOpen}
         onOpenChange={(open) => {
           setIsCreateOrgOpen(open)
-          if (!open) setNewOrgName("")
+          if (!open) {
+            setNewOrgName("")
+            setNewProductName("")
+            setNewDescription("")
+          }
         }}
       >
         <DialogContent>
@@ -263,6 +283,35 @@ export function AppSidebar() {
                 required
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="product-name" className="text-sm font-medium">
+                Product Name
+              </label>
+              <Input
+                id="product-name"
+                type="text"
+                placeholder="e.g., Fire Stick"
+                autoComplete="off"
+                required
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="description" className="text-sm font-medium">
+                Description
+              </label>
+              <textarea
+                id="description"
+                className="flex min-h-[80px] w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                placeholder="Describe your product and feedback context..."
+                autoComplete="off"
+                required
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                maxLength={1000}
               />
             </div>
             <Button type="submit" className="w-full" disabled={createOrgLoading}>

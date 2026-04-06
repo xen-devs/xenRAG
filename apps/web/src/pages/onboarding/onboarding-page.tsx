@@ -50,13 +50,21 @@ export function OnboardingPage() {
       setCurrentStep("organization")
       return
     }
+    if (!productName.trim()) {
+      toast.error("Product name is required")
+      return
+    }
+    if (!description.trim()) {
+      toast.error("Description is required")
+      return
+    }
 
     setLoading(true)
     try {
       const createdOrg = await createOrg({
         name: orgName.trim(),
-        product_name: productName.trim() || undefined,
-        description: description.trim() || undefined,
+        product_name: productName.trim(),
+        description: description.trim(),
       })
       if (token) {
         await login(token)
@@ -204,6 +212,7 @@ export function OnboardingPage() {
                         type="text"
                         placeholder="e.g., Fire Stick"
                         autoComplete="off"
+                        required
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
                       />
@@ -218,6 +227,7 @@ export function OnboardingPage() {
                         className="flex min-h-[80px] w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                         placeholder="Describe your product and feedback context..."
                         autoComplete="off"
+                        required
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         maxLength={1000}
