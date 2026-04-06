@@ -6,8 +6,8 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
+    "dev": "turbo run dev --ui=tui",
+    "build": "turbo run build --ui=tui",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
@@ -18,7 +18,7 @@
     "clear:stores": "PYTHONPATH=apps/backend uv run --project apps/backend python scripts/clear_stores.py"
   },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "^2.9.4"
   },
   "packageManager": "npm@10.9.0"
 }

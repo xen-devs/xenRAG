@@ -115,7 +115,7 @@ export function ChatPage() {
     ])
 
     setIsStreaming(true)
-    setStatusMessage("Connecting...")
+    setStatusMessage("Thinking...")
     assistantMsgIdRef.current = null
 
     const controller = streamMessage(
