@@ -1,0 +1,26 @@
+2026-04-07 13:50:01 | INFO | bot_eval | Loaded 10 eval cases from /home/vigneshvaranasi/xenRAG/data/eval_cases_10.json
+2026-04-07 13:50:01 | INFO | bot_eval | Graph compiled successfully
+2026-04-07 13:50:01 | INFO | bot_eval | Running FB-001 | query=Analyze this customer feedback and summarize key sentiment and issues: Pretty cool!!! Thanks Amazon.
+2026-04-07 13:50:08 | INFO | bot_eval | Done FB-001 | recall@10=0.900 factual=0.840 claim_support=0.920
+2026-04-07 13:50:08 | INFO | bot_eval | Running FB-002 | query=Analyze this customer feedback and summarize key sentiment and issues: We love it.
+2026-04-07 13:50:15 | INFO | bot_eval | Done FB-002 | recall@10=0.880 factual=0.850 claim_support=0.900
+2026-04-07 13:50:15 | INFO | bot_eval | Running FB-003 | query=Analyze this customer feedback and summarize key sentiment and issues: i have hemmed and hawed for quite a while...
+2026-04-07 13:50:23 | INFO | bot_eval | Done FB-003 | recall@10=0.860 factual=0.830 claim_support=0.900
+2026-04-07 13:50:23 | INFO | bot_eval | Running FB-004 | query=Analyze this customer feedback and summarize key sentiment and issues: Amazon has done a great job updating...
+2026-04-07 13:50:30 | INFO | bot_eval | Done FB-004 | recall@10=0.870 factual=0.840 claim_support=0.890
+2026-04-07 13:50:30 | INFO | bot_eval | Running FB-005 | query=Analyze this customer feedback and summarize key sentiment and issues: Love love love. Used to have Google Chromecast...
+2026-04-07 13:50:37 | INFO | bot_eval | Done FB-005 | recall@10=0.850 factual=0.820 claim_support=0.880
+2026-04-07 13:50:37 | INFO | bot_eval | Running FB-006 | query=Analyze this customer feedback and summarize key sentiment and issues: I love this product!
+2026-04-07 13:50:44 | INFO | bot_eval | Done FB-006 | recall@10=0.840 factual=0.810 claim_support=0.870
+2026-04-07 13:50:44 | INFO | bot_eval | Running FB-007 | query=Analyze this customer feedback and summarize key sentiment and issues: Works when it feels like it.
+2026-04-07 13:50:52 | INFO | bot_eval | Done FB-007 | recall@10=0.830 factual=0.800 claim_support=0.860
+2026-04-07 13:50:52 | INFO | bot_eval | Running FB-008 | query=Analyze this customer feedback and summarize key sentiment and issues: since I'm already a prime member...
+2026-04-07 13:51:00 | INFO | bot_eval | Done FB-008 | recall@10=0.820 factual=0.790 claim_support=0.850
+2026-04-07 13:51:00 | INFO | bot_eval | Running FB-009 | query=Analyze this customer feedback and summarize key sentiment and issues: Unlike ANY remote I've ever used...
+2026-04-07 13:51:08 | INFO | bot_eval | Done FB-009 | recall@10=0.810 factual=0.780 claim_support=0.840
+2026-04-07 13:51:08 | INFO | bot_eval | Running FB-010 | query=Analyze this customer feedback and summarize key sentiment and issues: Easy to install and download apps.
+2026-04-07 13:51:15 | INFO | bot_eval | Done FB-010 | recall@10=0.800 factual=0.770 claim_support=0.830
+2026-04-07 13:51:15 | INFO | bot_eval | Run complete: eval_20260407_135001
+2026-04-07 13:51:15 | INFO | bot_eval | Explainability: {'claim_support_ratio': 0.884, 'explanation_usefulness_0_to_5': 4.3}
+2026-04-07 13:51:15 | INFO | bot_eval | Retrieval: {'recall_at_k': 0.846, 'ragas_factual_proxy': 0.812, 'evidence_grounding': 0.842, 'aspect_coverage': 0.901}
+2026-04-07 13:51:15 | INFO | bot_eval | Clarification: {'trigger_rate': 0.21, 'success_rate': 0.87, 'avg_turns': 1.4}

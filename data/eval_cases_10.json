@@ -1,0 +1,42 @@
+[
+  {
+    "case_id": "FB-001",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Pretty cool!!! Thanks Amazon."
+  },
+  {
+    "case_id": "FB-002",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: We love it."
+  },
+  {
+    "case_id": "FB-003",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: i have hemmed and hawed for quite a while about a Fire Stick or a Roku ... i finally got it on prime day for only 20 bucks ... it was SIMPLE to set up ... now i gotta figure out is it worth it to dump cable and get hulu or sling."
+  },
+  {
+    "case_id": "FB-004",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Amazon has done a great job updating the Fire Stick software, and all of my complaints from my initial review have been fixed."
+  },
+  {
+    "case_id": "FB-005",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Love love love. Used to have Google Chromecast, this is 100x better quality and easier to use."
+  },
+  {
+    "case_id": "FB-006",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: I love this product!"
+  },
+  {
+    "case_id": "FB-007",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Works when it feels like it."
+  },
+  {
+    "case_id": "FB-008",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: since I'm already a prime member ... we're hardly watching any network television ... more than enough good and intelligent and fun content."
+  },
+  {
+    "case_id": "FB-009",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Unlike ANY remote I've ever used ... not intuitive, freezes, pixelates, slow to change channels ... I really, really don't like this."
+  },
+  {
+    "case_id": "FB-010",
+    "query": "Analyze this customer feedback and summarize key sentiment and issues: Easy to install and download apps."
+  }
+]

@@ -58,6 +58,22 @@ npm run ingest -- data/Electronics_B075X8471B_B00ZV9RDKK_reviews.jsonl --limit 5
 npm run ai:cli
 ```
 
+## Quick Evaluation
+
+Use the generated quick eval file:
+
+```bash
+uv run python scripts/evaluate_bot.py \
+  --eval-file data/eval_cases_10.json \
+  --output-dir eval_outputs
+```
+
+This writes:
+
+- `eval_outputs/evaluation.log`
+- `eval_outputs/eval_<timestamp>.json`
+- `eval_outputs/eval_<timestamp>.csv`
+
 ### Run with Turborepo
 
 ```bash
